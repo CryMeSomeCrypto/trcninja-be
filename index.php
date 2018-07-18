@@ -1,26 +1,26 @@
 <?php
 
 /*
-    This file is part of TRC Ninja.
-    https://github.com/terracoin/trcninja-be
+    This file is part of CHC Ninja.
+    https://github.com/crymesomecrypto/chcninja-be
 
-    TRC Ninja is free software: you can redistribute it and/or modify
+    CHC Ninja is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
 
-    TRC Ninja is distributed in the hope that it will be useful,
+    CHC Ninja is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
 
     You should have received a copy of the GNU General Public License
-    along with TRC Ninja.  If not, see <http://www.gnu.org/licenses/>.
+    along with CHC Ninja.  If not, see <http://www.gnu.org/licenses/>.
 
  */
 
 /*****************************************************************************
- * TRC Ninja Back-end Private REST API                                       *
+ * CHC Ninja Back-end Private REST API                                       *
  *---------------------------------------------------------------------------*
  * This script is the backend interface between hubs                         *
  * It is the foundation for all other scripts, it is private API and is not  *
@@ -80,7 +80,7 @@ $eventManager->attach('micro', function($event, $app) use ($mysqli) {
     // Now we need to check the peer is a known/allowed hub (via its client certificate and the remote address)
     $cacheserial = sha1($_SERVER['DN']);
     $cacheserial2 = sha1($_SERVER['REMOTE_ADDR']);
-    $cachefnam = CACHEFOLDER.sprintf("trcninja_cmd_hubcheck_%s_%s",$cacheserial,$cacheserial2);
+    $cachefnam = CACHEFOLDER.sprintf("chcninja_cmd_hubcheck_%s_%s",$cacheserial,$cacheserial2);
     $cachevalid = (is_readable($cachefnam) && ((filemtime($cachefnam)+7200)>=time()));
     if ($cachevalid) {
       $data = unserialize(file_get_contents($cachefnam));
@@ -385,7 +385,7 @@ $app->post('/blocks', function() use ($app,&$mysqli) {
   }
   else {
     // Retrieve all known nodes for current hub
-    $result = trcninja_cmd_getnodes($mysqli,$authinfo['HubId'],0);
+    $result = chcninja_cmd_getnodes($mysqli,$authinfo['HubId'],0);
     $numnodes = 0;
     $nodes = array();
     if (count($result) > 0) {
@@ -394,7 +394,7 @@ $app->post('/blocks', function() use ($app,&$mysqli) {
         $nodes[$nodename] = $row['NodeId'];
       }
     }
-    $result = trcninja_cmd_getnodes($mysqli,$authinfo['HubId'],1);
+    $result = chcninja_cmd_getnodes($mysqli,$authinfo['HubId'],1);
     if (count($result) > 0) {
         foreach($result as $nodename => $row){
             $numnodes++;
@@ -444,10 +444,10 @@ $app->post('/blocks', function() use ($app,&$mysqli) {
           return $response;
         }
         if ($curratio[0] > -1) {
-          $stats[] = sprintf("('mnpaymentratio','%s',%d,'trcninja')",$curratio[0],time());
+          $stats[] = sprintf("('mnpaymentratio','%s',%d,'chcninja')",$curratio[0],time());
         }
         if ($curratio[1] > -1) {
-          $stats[] = sprintf("('mnpaymentratiotest','%s',%d,'trcninja')",$curratio[1],time());
+          $stats[] = sprintf("('mnpaymentratiotest','%s',%d,'chcninja')",$curratio[1],time());
         }
       }
 
@@ -620,17 +620,17 @@ EOT;
             if ($row["BlockTestNet"] == 1) {
               $statkey .= "test";
             }
-            $stats[] = sprintf("('%s','%s',%d,'trcninja')",$statkey,$row["TotalSupplyValue"],time());
-            $statkey = "paymenttrc";
+            $stats[] = sprintf("('%s','%s',%d,'chcninja')",$statkey,$row["TotalSupplyValue"],time());
+            $statkey = "paymentchc";
             if ($row["BlockTestNet"] == 1) {
               $statkey .= "test";
             }
-            $stats[] = sprintf("('%s','%s',%d,'trcninja')",$statkey,$row["TotalMNValue"],time());
+            $stats[] = sprintf("('%s','%s',%d,'chcninja')",$statkey,$row["TotalMNValue"],time());
             $statkey = "mnpayments";
             if ($row["BlockTestNet"] == 1) {
               $statkey .= "test";
             }
-            $stats[] = sprintf("('%s','%s',%d,'trcninja')",$statkey,round(($row["NumPayed"]/$row["NumBlocks"])*100,2),time());
+            $stats[] = sprintf("('%s','%s',%d,'chcninja')",$statkey,round(($row["NumPayed"]/$row["NumBlocks"])*100,2),time());
           }
         }
       }
@@ -830,7 +830,7 @@ $app->get('/superblocksexpected', function() use ($app,&$mysqli) {
 });
 
 // Function to retrieve the masternode list
-function trcninja_masternodes_get($mysqli, $testnet = 0, $protocol = 0) {
+function chcninja_masternodes_get($mysqli, $testnet = 0, $protocol = 0) {
 
   $sqlmaxprotocol = sprintf("SELECT MAX(NodeProtocol) Protocol FROM cmd_nodes cn, cmd_nodes_status cns WHERE cn.NodeId = cns.NodeId AND NodeTestnet = %d GROUP BY NodeTestnet",$testnet);
   // Run the query
@@ -897,7 +897,7 @@ function trcninja_masternodes_get($mysqli, $testnet = 0, $protocol = 0) {
   return $nodes;
 }
 
-function trcmn_masternodes_count($mysqli,$testnet,&$totalmncount,&$uniquemnips) {
+function chcmn_masternodes_count($mysqli,$testnet,&$totalmncount,&$uniquemnips) {
 
     // Retrieve the total unique IPs per protocol version
 /*    $sqlmnnum1 = sprintf("(SELECT first.Protocol Protocol, COUNT(1) UniqueActiveMasternodesIPs FROM "
@@ -1272,9 +1272,9 @@ $app->get('/nodes', function() use ($app,&$mysqli) {
 
 });
 
-function trcninja_cmd_getnodes($mysqli,$hubid = -1,$testnet = 0) {
+function chcninja_cmd_getnodes($mysqli,$hubid = -1,$testnet = 0) {
 
-  $cachefnam = CACHEFOLDER.sprintf("trcninja_cmd_getnodes_%d_%d",$hubid,$testnet);
+  $cachefnam = CACHEFOLDER.sprintf("chcninja_cmd_getnodes_%d_%d",$hubid,$testnet);
   $cachevalid = (is_readable($cachefnam) && ((filemtime($cachefnam)+3600)>=time()));
   if ($cachevalid) {
     $nodes = unserialize(file_get_contents($cachefnam));
@@ -1347,7 +1347,7 @@ $app->post('/ping', function() use ($app,&$mysqli) {
   else {
     // Retrieve all known nodes for current hub
     $istestnet = intval($payload['testnet']);
-    $nodes = trcninja_cmd_getnodes($mysqli,$authinfo['HubId'],$istestnet);
+    $nodes = chcninja_cmd_getnodes($mysqli,$authinfo['HubId'],$istestnet);
     $numnodes = count($nodes);
     if ($numnodes > 0) {
       if ($numnodes == count($payload['nodes'])) {
@@ -1844,28 +1844,28 @@ $app->post('/ping', function() use ($app,&$mysqli) {
           $sqlstats2 = array();
           $activemncount = 0;
           $uniquemnips = 0;
-          trcmn_masternodes_count($mysqli,$istestnet,$activemncount,$uniquemnips);
-          $sqlstats2[] = sprintf("('%s','%s',%d,'trcninja')",'mnactive',$activemncount,time());
-          $sqlstats2[] = sprintf("('%s','%s',%d,'trcninja')",'mnuniqiptest',$uniquemnips,time());
+          chcmn_masternodes_count($mysqli,$istestnet,$activemncount,$uniquemnips);
+          $sqlstats2[] = sprintf("('%s','%s',%d,'chcninja')",'mnactive',$activemncount,time());
+          $sqlstats2[] = sprintf("('%s','%s',%d,'chcninja')",'mnuniqiptest',$uniquemnips,time());
 
           $teststr = "";
           if ($istestnet == 1) {
               $teststr = "test";
           }
-          $sql = "SELECT StatKey, StatValue FROM cmd_stats_values WHERE StatKey = 'usdbtc' OR StatKey = 'btctrc' OR StatKey = 'eurobtc' OR StatKey = 'mnactiveath$teststr'";
-          $tmp = array("btctrc" => 0.0, "eurobtc" => 0.0, "usdbtc" => 0.0, "mnactiveath$teststr" => 0);
+          $sql = "SELECT StatKey, StatValue FROM cmd_stats_values WHERE StatKey = 'usdbtc' OR StatKey = 'btcchc' OR StatKey = 'eurobtc' OR StatKey = 'mnactiveath$teststr'";
+          $tmp = array("btcchc" => 0.0, "eurobtc" => 0.0, "usdbtc" => 0.0, "mnactiveath$teststr" => 0);
           if ($result = $mysqli->query($sql)) {
             while ($row = $result->fetch_assoc()) {
               $tmp[$row['StatKey']] = floatval($row['StatValue']);
             }
             $result->free();
           }
-          $pricebtc = $tmp['btctrc'];
+          $pricebtc = $tmp['btcchc'];
           $priceeur = $pricebtc*$tmp['eurobtc'];
           $priceusd = $pricebtc*$tmp['usdbtc'];
           $activemncountath = $tmp["mnactiveath$teststr"];
           if ($activemncount > $activemncountath) {
-            $sqlstats2[] = sprintf("('%s','%s',%d,'trcninja')","mnactiveath$teststr",$activemncount,time());
+            $sqlstats2[] = sprintf("('%s','%s',%d,'chcninja')","mnactiveath$teststr",$activemncount,time());
           }
 
           $sqlstats[] = sprintf("(%d,NOW(),%d,%d,%01.9f,%01.9f,%01.9f)",
@@ -1880,20 +1880,20 @@ $app->post('/ping', function() use ($app,&$mysqli) {
           if ($istestnet == 1) {
             $statkey .= "test";
           }
-          $sqlstats2[] = sprintf("('%s','%s',%d,'trcninja')",$statkey,$networkhashps,time());
+          $sqlstats2[] = sprintf("('%s','%s',%d,'chcninja')",$statkey,$networkhashps,time());
           if ((isset($governancenextsuperblock)) && (!is_null($governancenextsuperblock)) && ($governancenextsuperblock > 0)) {
             $statkey = "governancesb";
             if ($istestnet == 1) {
               $statkey .= "test";
             }
-            $sqlstats2[] = sprintf("('%s','%s',%d,'trcninja')",$statkey,$governancenextsuperblock,time());
+            $sqlstats2[] = sprintf("('%s','%s',%d,'chcninja')",$statkey,$governancenextsuperblock,time());
           }
           if ((isset($governancebudget)) && (!is_null($governancebudget)) && ($governancebudget > 0)) {
             $statkey = "governancebudget";
             if ($istestnet == 1) {
               $statkey .= "test";
             }
-            $sqlstats2[] = sprintf("('%s','%s',%01.9f,'trcninja')", $statkey, $governancebudget, time());
+            $sqlstats2[] = sprintf("('%s','%s',%01.9f,'chcninja')", $statkey, $governancebudget, time());
           }
 
           $statsinfo = false;
@@ -2390,7 +2390,7 @@ $app->get('/portcheck/config', function() use ($app,&$mysqli) {
     $response->setJsonContent(array('status' => 'ERROR', 'messages' => 'Payload (or CONTENT_LENGTH) is missing'));
   }
   else {
-    $cachefnam = CACHEFOLDER."trcninja_cmd_portcheck_config";
+    $cachefnam = CACHEFOLDER."chcninja_cmd_portcheck_config";
     $cachevalid = (is_readable($cachefnam) && ((filemtime($cachefnam)+7200)>=time()));
     if ($cachevalid) {
       $config = unserialize(file_get_contents($cachefnam));
@@ -2555,14 +2555,14 @@ $app->post('/portcheck', function() use ($app,&$mysqli) {
 });
 
 // ============================================================================
-// THIRDPARTIES (Reporting for trcircbot)
+// THIRDPARTIES (Reporting for chcircbot)
 // ----------------------------------------------------------------------------
 // End-point to update third parties values (USD/DRK for ex)
 // HTTP method:
 //   POST
 // Parameters (JSON body):
 //   thirdparties=array of keys/values (mandatory)
-//   trcwhale=array of keys/values (mandatory)
+//   chcwhale=array of keys/values (mandatory)
 // Result (JSON body):
 //   status=OK|ERROR
 //   messages=array of error messages (only if status is ERROR)
@@ -2581,7 +2581,7 @@ $app->post('/thirdparties', function() use ($app,&$mysqli) {
   if ((0 == 1 && (!array_key_exists('CONTENT_LENGTH',$_SERVER) || (intval($_SERVER['CONTENT_LENGTH']) == 0)))
       || !is_array($payload) || (count($payload) == 0)
       || !array_key_exists("thirdparties",$payload) || !is_array($payload["thirdparties"])
-      || !array_key_exists("trcwhale",$payload) || !is_array($payload["trcwhale"])) {
+      || !array_key_exists("chcwhale",$payload) || !is_array($payload["chcwhale"])) {
     //Change the HTTP status
     $response->setStatusCode(400, "Bad Request");
 
@@ -2619,9 +2619,9 @@ $app->post('/thirdparties', function() use ($app,&$mysqli) {
       }
     }
 
-    // TRC Whale data
+    // CHC Whale data
     $sqldwc = array();
-    foreach($payload["trcwhale"] as $proposal) {
+    foreach($payload["chcwhale"] as $proposal) {
       $dwinfo = var_export($proposal,true);
       if (is_array($proposal) && (count($proposal) == 2)
       && array_key_exists("proposal",$proposal) && is_array($proposal["proposal"])
@@ -2660,7 +2660,7 @@ $app->post('/thirdparties', function() use ($app,&$mysqli) {
     }
 
       if (count($sqldwc) > 0) {
-          $sql = "INSERT INTO cmd_budget_trcwhale_comments (BudgetHash, CommentHash, CommentUsername, CommentDate, "
+          $sql = "INSERT INTO cmd_budget_chcwhale_comments (BudgetHash, CommentHash, CommentUsername, CommentDate, "
                 ."CommentOrder, CommentLevel, CommentRecentPost, CommentByOwner, CommentReplyURL, CommentContent)"
                 ." VALUES ".implode(',',$sqldwc)
                 ." ON DUPLICATE KEY UPDATE CommentUsername = VALUES(CommentUsername), CommentDate = VALUES(CommentDate), "
@@ -2685,7 +2685,7 @@ $app->post('/thirdparties', function() use ($app,&$mysqli) {
     if (count($errors) == 0) {
         $response->setStatusCode(202, "Accepted");
         $response->setJsonContent(array('status' => 'OK', 'data' => array('thirdparties' => $statsinfo,
-                                                                          'trcwhale' => $dwinfo)));
+                                                                          'chcwhale' => $dwinfo)));
     }
     else {
         $response->setStatusCode(503, "Service Unavailable");
@@ -2700,7 +2700,7 @@ $app->post('/thirdparties', function() use ($app,&$mysqli) {
 // ============================================================================
 // VERSIONS
 // ----------------------------------------------------------------------------
-// End-point for creating new version of terracoind to use by the nodes
+// End-point for creating new version of chaincoind to use by the nodes
 // HTTP method:
 //   POST
 // Parameters (JSON body):
